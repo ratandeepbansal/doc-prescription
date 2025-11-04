@@ -13,9 +13,13 @@ This is a Next.js-based MVP for a prescription assistant that helps doctors duri
 
 ## Important Notes
 
-1. **Simulated Transcription**: Currently uses setTimeout for demo. Real implementation would use OpenAI Realtime API.
+1. **Real-time Voice Transcription**: Uses OpenAI Realtime API with WebSocket connection. Requires:
+   - Microphone access
+   - HTTPS (localhost works for dev)
+   - API key with Realtime API beta access
+   - Browser with Web Audio API support
 
-2. **Client-Side API Calls**: API key is exposed client-side (NEXT_PUBLIC_ prefix). Production needs backend proxy.
+2. **Client-Side WebSocket**: Direct connection to OpenAI for dev. Production needs relay server for security.
 
 3. **Phase Management**: Main page (app/page.tsx) controls phase transitions. When session ends, phase resets to 'welcome'.
 
@@ -36,6 +40,13 @@ This is a Next.js-based MVP for a prescription assistant that helps doctors duri
 - Skeleton (for loading states)
 - Toaster (sonner - already configured in layout)
 
+## Realtime API Implementation
+
+- **Audio Format**: 24kHz mono PCM16
+- **Event Handling**: Listen for `conversation.item.input_audio_transcription.completed` and `response.audio_transcript.delta`
+- **Error Handling**: Gracefully handle microphone permission errors
+- **Cleanup**: Always stop tracks, close context, and close WebSocket on unmount
+
 ## Code Style
 
 - Use "use client" directive for client components
@@ -43,3 +54,4 @@ This is a Next.js-based MVP for a prescription assistant that helps doctors duri
 - Keep components focused and small
 - Use Tailwind for all styling
 - Follow shadcn/ui patterns for UI components
+- Use toast notifications (Sonner) instead of browser alerts

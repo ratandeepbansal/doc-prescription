@@ -101,34 +101,190 @@ Provide suggestions in JSON format.`
   }
 }
 
-// Note: For MVP, we're using a simulated transcription
-// In production, you would use OpenAI Realtime API for actual voice transcription
+// Real-time transcription using OpenAI Realtime API
 export class TranscriptionService {
+  private ws: WebSocket | null = null;
   private isActive = false;
   private onTranscriptUpdate: ((text: string) => void) | null = null;
   private accumulatedText = '';
+  private mediaStream: MediaStream | null = null;
+  private audioContext: AudioContext | null = null;
+  private processor: ScriptProcessorNode | null = null;
 
-  start(onUpdate: (text: string) => void) {
+  async start(onUpdate: (text: string) => void) {
     this.isActive = true;
     this.onTranscriptUpdate = onUpdate;
     this.accumulatedText = '';
-    
-    // For MVP: Simulate transcription
-    // In production: Connect to OpenAI Realtime API WebSocket
-    console.log('Transcription started (simulated)');
+
+    try {
+      // Request microphone access
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 24000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        }
+      });
+
+      // Set up audio context
+      this.audioContext = new AudioContext({ sampleRate: 24000 });
+      const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+      this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+
+      // Connect to OpenAI Realtime API
+      const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+      const model = 'gpt-4o-realtime-preview-2024-10-01';
+      const url = `wss://api.openai.com/v1/realtime?model=${model}`;
+      
+      this.ws = new WebSocket(url, [
+        'realtime',
+        `openai-insecure-api-key.${apiKey}`,
+        'openai-beta.realtime-v1'
+      ]);
+
+      this.ws.onopen = () => {
+        console.log('✅ Connected to OpenAI Realtime API');
+        
+        // Configure session for transcription
+        this.sendEvent({
+          type: 'session.update',
+          session: {
+            modalities: ['text'],
+            instructions: 'Transcribe the audio accurately. Identify speakers as Doctor or Patient when possible.',
+            voice: 'alloy',
+            input_audio_transcription: {
+              model: 'whisper-1'
+            },
+            turn_detection: {
+              type: 'server_vad',
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500
+            }
+          }
+        });
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          // Debug: log all events
+          console.log('Realtime API Event:', data.type);
+          
+          // Handle incremental transcription deltas
+          if (data.type === 'response.audio_transcript.delta') {
+            const delta = data.delta;
+            if (delta) {
+              this.accumulatedText += delta;
+              this.onTranscriptUpdate?.(this.accumulatedText);
+            }
+          }
+          
+          // Handle completed transcription
+          if (data.type === 'conversation.item.created') {
+            const item = data.item;
+            if (item?.formatted?.transcript) {
+              this.accumulatedText += item.formatted.transcript + ' ';
+              this.onTranscriptUpdate?.(this.accumulatedText);
+            }
+          }
+
+          // Handle input audio transcription specifically
+          if (data.type === 'conversation.item.input_audio_transcription.completed') {
+            const transcript = data.transcript;
+            if (transcript) {
+              this.accumulatedText += transcript + ' ';
+              this.onTranscriptUpdate?.(this.accumulatedText);
+            }
+          }
+
+          // Handle errors
+          if (data.type === 'error') {
+            console.error('Realtime API Error:', data.error);
+          }
+        } catch (err) {
+          console.error('Error parsing WebSocket message:', err);
+        }
+      };
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      this.ws.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      // Process and stream audio
+      source.connect(this.processor);
+      this.processor.connect(this.audioContext.destination);
+
+      this.processor.onaudioprocess = (e) => {
+        if (!this.isActive || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+
+        const inputBuffer = e.inputBuffer.getChannelData(0);
+        const pcm16 = new Int16Array(inputBuffer.length);
+        
+        for (let i = 0; i < inputBuffer.length; i++) {
+          pcm16[i] = Math.max(-1, Math.min(1, inputBuffer[i])) * 0x7FFF;
+        }
+
+        // Convert to base64 for transmission
+        const uint8Array = new Uint8Array(pcm16.buffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.length; i++) {
+          binary += String.fromCharCode(uint8Array[i]);
+        }
+        const base64Audio = btoa(binary);
+        
+        this.sendEvent({
+          type: 'input_audio_buffer.append',
+          audio: base64Audio
+        });
+      };
+
+      console.log('🎤 Microphone activated - Real-time transcription started');
+    } catch (error) {
+      console.error('Error starting transcription:', error);
+      throw error;
+    }
   }
 
   stop() {
     this.isActive = false;
+    
+    // Stop audio processing
+    if (this.processor) {
+      this.processor.disconnect();
+      this.processor = null;
+    }
+    
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+    
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    
+    // Close WebSocket
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    
     this.onTranscriptUpdate = null;
-    console.log('Transcription stopped');
+    console.log('🛑 Transcription stopped');
   }
 
-  // Simulate adding transcribed text
-  addText(text: string) {
-    if (!this.isActive) return;
-    this.accumulatedText += text + ' ';
-    this.onTranscriptUpdate?.(this.accumulatedText);
+  private sendEvent(event: Record<string, unknown>) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(event));
+    }
   }
 
   getAccumulatedText(): string {

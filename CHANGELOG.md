@@ -2,6 +2,79 @@
 
 All notable changes to the Prescription Assistant MVP.
 
+## [0.3.0] - Real Voice Transcription
+
+### 🎤 Major Feature: OpenAI Realtime API Integration
+
+#### Real-time Voice Transcription
+- **Live Audio Streaming** - Direct microphone input via Web Audio API
+- **OpenAI Realtime API** - WebSocket connection for low-latency transcription
+- **Automatic Transcription** - Uses Whisper-1 model integrated in Realtime API
+- **Voice Activity Detection** - Server-side VAD for natural conversation flow
+
+#### Microphone Features
+- **Permission Handling** - Early permission request with helpful error messages
+- **Audio Processing** - 24kHz PCM16 audio streaming
+- **Echo Cancellation** - Built-in noise suppression and echo cancellation
+- **Auto-stop** - Graceful cleanup of audio resources
+
+#### UX Improvements
+- **Live Mode Indicator** - Green banner showing real-time transcription status
+- **Error Feedback** - Clear messages for permission denied or missing microphone
+- **Permission Pre-check** - Validates microphone access before starting session
+
+### 🛠️ Technical Changes
+- Replaced simulated transcription with OpenAI Realtime API WebSocket
+- Implemented Web Audio API for microphone capture
+- Added PCM16 audio format conversion
+- Integrated server-side Voice Activity Detection
+- Removed demo setTimeout simulation
+
+### ⚠️ Breaking Changes
+- Microphone access now required for transcription
+- HTTPS required in production (localhost works for dev)
+- API key must have Realtime API beta access
+
+### 📝 Documentation Updates
+- Updated README with microphone requirements
+- Added HTTPS and beta access notes
+- Updated setup guide with permission instructions
+
+---
+
+## [0.2.0] - Enhanced Features
+
+### ✨ New Features
+
+#### Prescription Management
+- **Prescription Detail View** - Full-screen modal showing complete prescription details
+- **Search Functionality** - Search prescriptions by patient name with real-time filtering
+- **Delete Prescriptions** - Remove old prescriptions with confirmation dialog
+- **Export Options** - Export prescriptions as JSON or regenerate PDF
+
+#### Storage Management
+- **Storage Quota Indicator** - Visual progress bar showing localStorage usage
+- **Warning System** - Alerts when storage exceeds 70% capacity
+- **Auto-refresh** - Updates storage status every 30 seconds
+
+#### UX Improvements
+- **Accessible Dialogs** - Proper Radix UI Dialog component with keyboard navigation
+- **Improved List UI** - Clickable prescription cards with hover states
+- **Better Organization** - Filter duplicates, show up to 20 most recent prescriptions
+
+### 🛠️ Technical Improvements
+- Added @radix-ui/react-dialog for accessible modals
+- Extracted filtered prescriptions logic to avoid duplication
+- Reduced storage update frequency from 10s to 30s
+- Replaced browser `confirm()` with custom Dialog component
+
+### 📦 New Components
+- `PrescriptionDetailView` - Comprehensive prescription display
+- `StorageQuotaIndicator` - Storage usage visualization
+- `Dialog` (shadcn/ui) - Accessible modal component
+
+---
+
 ## [0.1.0] - MVP Release
 
 ### ✨ Features

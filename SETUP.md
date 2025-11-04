@@ -16,6 +16,8 @@ NEXT_PUBLIC_OPENAI_API_KEY=sk-your-actual-api-key-here
 
 Get your API key from: https://platform.openai.com/api-keys
 
+⚠️ **Important**: Your API key must have access to the Realtime API (currently in beta)
+
 ### 3. Run the App
 ```bash
 npm run dev
@@ -25,12 +27,13 @@ Open http://localhost:3000 🎉
 
 ## What You'll See
 
-1. **Welcome Screen** - Enter a patient name and click "Start"
-2. **Recording Phase** - Watch AI suggestions appear as simulated conversation happens
+1. **Welcome Screen** - Enter a patient name and click "Start" (microphone permission will be requested)
+2. **Recording Phase** - Speak into your microphone and watch real-time AI transcription and suggestions
 3. **Draft Phase** - Edit and finalize the prescription, then generate PDF
 
-## Demo Features
+## Features
 
+- ✅ Real-time voice transcription (uses OpenAI Realtime API)
 - ✅ Real-time AI suggestions (uses GPT-4)
 - ✅ Interactive selection of symptoms/diagnoses/medicines
 - ✅ Editable prescription form
@@ -40,8 +43,9 @@ Open http://localhost:3000 🎉
 
 ## Important Notes
 
-⚠️ **MVP Limitations:**
-- Transcription is simulated (uses setTimeout for demo)
+⚠️ **Requirements:**
+- Microphone access required
+- HTTPS required in production (localhost works for development)
 - API key is client-side (use backend proxy in production)
 - Data stored in localStorage (use database in production)
 

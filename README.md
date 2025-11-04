@@ -4,14 +4,25 @@ An AI-powered prescription assistant for general medicine practitioners that use
 
 ## Features
 
-- 🎤 **Real-time Transcription** - Live transcription of doctor-patient conversations (simulated in MVP)
+### Core Functionality
+- 🎤 **Real-time Voice Transcription** - Live transcription using OpenAI Realtime API with microphone input
 - 🤖 **AI-Powered Suggestions** - Automatic suggestions for symptoms, diagnoses, and medicines using OpenAI GPT-4
 - ⏱️ **Timed Sessions** - 5-minute consultation recording limit with visual timer
 - ✅ **Interactive Selection** - Easy selection/deselection of AI suggestions
 - 📝 **Draft & Edit** - Review and edit prescriptions before finalizing
 - 📄 **PDF Generation** - Generate professional prescription PDFs
-- 💾 **Local Storage** - Save prescription history in browser localStorage
+
+### Prescription Management
+- 🔍 **Search Prescriptions** - Quick search by patient name
+- 👁️ **Detail View** - Full prescription details with all information
+- 📤 **Multiple Export Formats** - Export as PDF or JSON
+- 🗑️ **Delete Prescriptions** - Remove old prescriptions with confirmation
+
+### Storage & UI
+- 💾 **Smart Storage** - localStorage with usage indicator and warnings
 - 🌓 **Dark Mode** - Full dark mode support
+- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
+- 🔔 **Toast Notifications** - User-friendly feedback for all actions
 
 ## Tech Stack
 
@@ -47,7 +58,10 @@ An AI-powered prescription assistant for general medicine practitioners that use
    NEXT_PUBLIC_OPENAI_API_KEY=sk-your-api-key-here
    ```
    
-   ⚠️ **Important**: The MVP uses client-side API calls for simplicity. For production, implement a backend proxy to keep your API key secure.
+   ⚠️ **Important**: 
+   - The app uses client-side API calls for simplicity. For production, implement a backend relay server.
+   - Requires HTTPS for microphone access (localhost works in dev)
+   - Your API key must have access to the Realtime API (currently in beta)
 
 4. **Run the development server**
    ```bash
@@ -66,7 +80,8 @@ An AI-powered prescription assistant for general medicine practitioners that use
 - Click "Start" to begin consultation
 
 ### 2. Consultation Recording (Max 5 minutes)
-- Live transcription appears in real-time (simulated with demo text in MVP)
+- Allow microphone access when prompted
+- Speak into your microphone - transcription appears in real-time
 - AI analyzes conversation and provides suggestions for:
   - Symptoms
   - Diagnoses  
@@ -136,9 +151,9 @@ npm run lint
 └── public/                 # Static assets
 ```
 
-## Known Limitations (MVP)
+## Known Limitations
 
-1. **Simulated Transcription**: The MVP uses setTimeout to simulate real-time transcription. Production would integrate OpenAI Realtime API for actual voice-to-text.
+1. **Client-Side WebSocket**: Uses direct WebSocket connection to OpenAI. Production should use a relay server.
 
 2. **Client-Side API Key**: The OpenAI API key is exposed client-side. Production requires a backend proxy.
 

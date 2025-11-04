@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
+import { PrescriptionDetailView } from "@/components/prescription-detail-view";
+import { StorageQuotaIndicator } from "@/components/storage-quota-indicator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,11 +17,30 @@ interface WelcomeScreenProps {
 
 export function WelcomeScreen({ onStartConsultation }: WelcomeScreenProps) {
   const [patientName, setPatientName] = useState("");
-  const [prescriptions] = useState(() => storage.getPrescriptions());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [prescriptions, setPrescriptions] = useState(() => storage.getPrescriptions());
+  const [selectedPrescription, setSelectedPrescription] = useState<typeof prescriptions[0] | null>(null);
 
-  const handleStart = () => {
-    if (patientName.trim()) {
+  const handleDeletePrescription = (id: string) => {
+    storage.deletePrescription(id);
+    setPrescriptions(storage.getPrescriptions());
+  };
+
+  const handleStart = async () => {
+    if (!patientName.trim()) return;
+
+    // Request microphone permission early
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(track => track.stop()); // Stop immediately, just checking permission
       onStartConsultation(patientName.trim());
+    } catch (err) {
+      console.error('Microphone permission error:', err);
+      if (err instanceof Error && err.name === 'NotAllowedError') {
+        toast.error('Microphone access is required for voice transcription. Please allow microphone access and try again.');
+      } else {
+        toast.error('Could not access microphone. Please check your browser settings.');
+      }
     }
   };
 
@@ -68,6 +90,9 @@ export function WelcomeScreen({ onStartConsultation }: WelcomeScreenProps) {
           </CardContent>
         </Card>
 
+        {/* Storage Indicator */}
+        <StorageQuotaIndicator />
+
         {/* Previous Prescriptions */}
         <Card>
           <CardHeader>
@@ -86,28 +111,56 @@ export function WelcomeScreen({ onStartConsultation }: WelcomeScreenProps) {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {prescriptions.slice(-10).reverse().map((prescription) => (
-                  <div
-                    key={prescription.id}
-                    className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium">{prescription.patientName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(prescription.date)}
-                      </p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {prescription.medicines.length} medicine(s)
-                    </div>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                <Input
+                  placeholder="Search by patient name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mb-2"
+                />
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {(() => {
+                    const filteredPrescriptions = prescriptions
+                      .filter(p => p.patientName.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .slice(-20)
+                      .reverse();
+                    
+                    return filteredPrescriptions.length > 0 ? (
+                      filteredPrescriptions.map((prescription) => (
+                        <button
+                          key={prescription.id}
+                          onClick={() => setSelectedPrescription(prescription)}
+                          className="w-full flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors text-left"
+                        >
+                          <div>
+                            <p className="font-medium">{prescription.patientName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDate(prescription.date)}
+                            </p>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {prescription.medicines.length} medicine(s)
+                          </div>
+                        </button>
+                      ))
+                    ) : searchQuery ? (
+                      <p className="text-center text-muted-foreground py-4">No prescriptions found</p>
+                    ) : null;
+                  })()}
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {selectedPrescription && (
+        <PrescriptionDetailView
+          prescription={selectedPrescription}
+          onClose={() => setSelectedPrescription(null)}
+          onDelete={handleDeletePrescription}
+        />
+      )}
     </div>
   );
 }

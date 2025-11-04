@@ -20,6 +20,7 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
   const { currentSession, isRecording, stopRecording, updateTranscription, updateSuggestions, updateDuration } = useConsultationStore();
   const [duration, setDuration] = useState(0);
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const transcriptionService = useRef<TranscriptionService>(new TranscriptionService());
   const timerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const suggestionTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -32,6 +33,16 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
     // Start transcription service
     service.start((text) => {
       updateTranscription(text);
+    }).catch((err) => {
+      console.error('Failed to start transcription:', err);
+      if (err.name === 'NotAllowedError') {
+        setError('Microphone access denied. Please allow microphone access to use voice transcription.');
+      } else if (err.name === 'NotFoundError') {
+        setError('No microphone found. Please connect a microphone to use voice transcription.');
+      } else {
+        setError('Failed to start voice transcription. Please check your microphone settings.');
+      }
+      stopRecording();
     });
 
     // Start timer
@@ -52,20 +63,6 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
         await updateSuggestionsFromTranscript(currentSession.transcription);
       }
     }, SUGGESTION_UPDATE_INTERVAL);
-
-    // Simulate some transcription for demo
-    setTimeout(() => {
-      service.addText("Doctor: Hello, how are you feeling today?");
-    }, 2000);
-    setTimeout(() => {
-      service.addText("Patient: I've been having a headache for the past two days.");
-    }, 5000);
-    setTimeout(() => {
-      service.addText("Doctor: Can you describe the headache? Is it throbbing or constant?");
-    }, 8000);
-    setTimeout(() => {
-      service.addText("Patient: It's a constant dull ache, mainly on the right side.");
-    }, 11000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -103,6 +100,14 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
 
   return (
     <div className="min-h-screen p-6 space-y-6">
+      {error && (
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-2 px-4 py-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
+            <span className="text-sm font-medium">⚠️ {error}</span>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -152,9 +157,9 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
-              <span className="text-yellow-600 dark:text-yellow-500 text-xs font-medium">
-                ℹ️ Demo Mode: Transcription is simulated for MVP demonstration
+            <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-md">
+              <span className="text-green-600 dark:text-green-500 text-xs font-medium">
+                🎤 Live Mode: Real-time voice transcription via OpenAI Realtime API
               </span>
             </div>
             <div className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 rounded-lg bg-muted">

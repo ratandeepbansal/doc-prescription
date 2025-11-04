@@ -69,15 +69,23 @@ export function WelcomeScreen({ onStartConsultation }: WelcomeScreenProps) {
         </Card>
 
         {/* Previous Prescriptions */}
-        {prescriptions.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Prescriptions</CardTitle>
-              <CardDescription>
-                {prescriptions.length} prescription(s) saved
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Prescriptions</CardTitle>
+            <CardDescription>
+              {prescriptions.length === 0
+                ? 'No prescriptions yet'
+                : `${prescriptions.length} prescription(s) saved`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {prescriptions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">
+                  Your prescription history will appear here after you create your first consultation.
+                </p>
+              </div>
+            ) : (
               <div className="space-y-2">
                 {prescriptions.slice(-10).reverse().map((prescription) => (
                   <div
@@ -96,9 +104,9 @@ export function WelcomeScreen({ onStartConsultation }: WelcomeScreenProps) {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

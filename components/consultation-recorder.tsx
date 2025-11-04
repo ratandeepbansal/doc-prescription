@@ -84,6 +84,7 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
       updateSuggestions(suggestions);
     } catch (error) {
       console.error('Error updating suggestions:', error);
+      // Continue even if AI suggestions fail - user can manually add items later
     } finally {
       setIsGeneratingSuggestions(false);
     }
@@ -150,7 +151,12 @@ export function ConsultationRecorder({ onProceedToDraft }: ConsultationRecorderP
               {isRecording ? 'Recording in progress...' : 'Recording stopped'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/20 rounded-md">
+              <span className="text-yellow-600 dark:text-yellow-500 text-xs font-medium">
+                ℹ️ Demo Mode: Transcription is simulated for MVP demonstration
+              </span>
+            </div>
             <div className="min-h-[400px] max-h-[600px] overflow-y-auto p-4 rounded-lg bg-muted">
               {currentSession.transcription ? (
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">

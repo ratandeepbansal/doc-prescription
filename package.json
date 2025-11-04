@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "checks": "tsc --noEmit && npm run lint"
+    "typecheck": "tsc --noEmit",
+    "checks": "npm run typecheck && npm run lint"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
@@ -19,6 +20,7 @@
     "openai": "^6.8.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "uuid": "^13.0.0",
     "zustand": "^5.0.8"

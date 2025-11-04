@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,6 +82,14 @@ export function DraftPhase() {
   };
 
   const handleGeneratePDF = () => {
+    // Validate at least one item is present
+    const hasContent = symptoms.length > 0 || diagnoses.length > 0 || medicines.some(m => m.name.trim());
+    
+    if (!hasContent) {
+      toast.error('Please add at least one symptom, diagnosis, or medicine before generating the prescription.');
+      return;
+    }
+
     const prescription: Prescription = {
       id: uuidv4(),
       consultationSessionId: currentSession.id,
@@ -94,14 +103,28 @@ export function DraftPhase() {
       generatedAt: new Date().toISOString()
     };
 
-    // Save to localStorage
-    storage.savePrescription(prescription);
+    try {
+      // Save to localStorage
+      storage.savePrescription(prescription);
 
-    // Generate PDF
-    generatePrescriptionPDF(prescription);
+      // Generate PDF
+      generatePrescriptionPDF(prescription);
 
-    // End session and return to home
-    endSession();
+      // Show success message
+      toast.success('Prescription generated successfully!');
+
+      // End session and return to home after a brief delay
+      setTimeout(() => {
+        endSession();
+      }, 1000);
+    } catch (error) {
+      console.error('Error generating prescription:', error);
+      if (error instanceof Error) {
+        toast.error(`Failed to generate prescription: ${error.message}`);
+      } else {
+        toast.error('Failed to generate prescription. Please try again.');
+      }
+    }
   };
 
   return (

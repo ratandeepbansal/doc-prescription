@@ -24,8 +24,17 @@ This is a Next.js-based MVP for a prescription assistant that helps doctors duri
 ## Development Workflow
 
 - Run `npm run checks` after changes (combines type checking + linting)
+- Run `npm run typecheck` for type checking only
 - Use shadcn-style components from components/ui/
 - Follow TypeScript strict mode - all types defined in lib/types.ts
+- Use Sonner for toast notifications instead of browser alert()
+
+## UI Components Available
+
+- Button, Input, Textarea, Card, Badge
+- Alert (for error/info messages)
+- Skeleton (for loading states)
+- Toaster (sonner - already configured in layout)
 
 ## Code Style
 

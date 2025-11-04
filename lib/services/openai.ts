@@ -2,9 +2,14 @@ import OpenAI from 'openai';
 import { Suggestion } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Check if API key is available
+if (!process.env.NEXT_PUBLIC_OPENAI_API_KEY) {
+  console.warn('⚠️ OpenAI API key not found. AI suggestions will not work.');
+}
+
 const openai = new OpenAI({
   apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY || '',
-  dangerouslyAllowBrowser: true // For MVP only
+  dangerouslyAllowBrowser: true // For MVP only - use backend proxy in production
 });
 
 export interface SuggestionsResponse {
@@ -91,6 +96,7 @@ Provide suggestions in JSON format.`
     };
   } catch (error) {
     console.error('Error generating suggestions:', error);
+    // Return empty suggestions to avoid breaking the UI
     return { symptoms: [], diagnoses: [], medicines: [] };
   }
 }
